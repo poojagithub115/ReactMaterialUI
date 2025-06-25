@@ -1,8 +1,7 @@
-import { Box, Button, Chip, DialogTitle, Divider, Drawer, FormLabel, IconButton, ImageList, ImageListItem, ImageListItemBar, List, ListItem, ListItemIcon, ListItemText, Stack, Typography, useTheme } from '@mui/material'
+import { Box, Button, Chip, Divider, Drawer, IconButton, List, ListItem, ListItemIcon, ListItemText, Stack, Typography, useTheme } from '@mui/material'
 import React from 'react'
-import CloseIcon from '@mui/icons-material/Close';
 import { useGetUserByIdQuery } from 'api/userApi'
-import { CompnyLogo } from './Styled/Styled';
+import { CompnyLogo, SideModal } from '../Styled/Styled';
 import { LanguageRounded, Share, TurnedInNot } from '@mui/icons-material';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import FmdGoodOutlinedIcon from '@mui/icons-material/FmdGoodOutlined';
@@ -16,19 +15,7 @@ function JobDetailDialog({ open, toggleDrawer, id }) {
     let dollarSign = user?.salary?.currency == 'USD' ? <AttachMoneyRoundedIcon sx={{ fontSize: (theme) => theme.palette.common.iconSizes.small, mr: .5 }} /> : <CurrencyRupeeRoundedIcon sx={{ fontSize: (theme) => theme.palette.common.iconSizes.small, mr: .5 }} />
 
     return (
-        <Drawer
-            // hideBackdrop
-            sx={{
-                '& .MuiDrawer-paper': {
-                    borderRadius: (theme) => `${theme.shape.borderRadius[0]}px`,
-                    padding: 3,
-                    bottom: 0,
-                    width: '40%',
-                    top: 'unset',
-                    bottom: '0',
-                    height: 'calc(100% - 64px)',
-                },
-            }}
+        <SideModal
             anchor="right"
             open={open}
             onClose={toggleDrawer}>
@@ -160,7 +147,7 @@ function JobDetailDialog({ open, toggleDrawer, id }) {
                     )}
                 </Box>
             </Box>
-        </Drawer>
+        </SideModal>
     )
 }
 

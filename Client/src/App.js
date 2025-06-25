@@ -5,7 +5,7 @@ import PlateEditor from './Components/GhostEditor';
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 // import TeamDropdownMenu from './Components/TeamDropdownMenu';
 import SidebarMenu from './Components/SidebarMenu';
-import Product from 'Components/Product';
+import Product from 'Components/Jobs/Product';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { useState } from 'react';
 
@@ -50,6 +50,17 @@ function App() {
       '...',
       // up to shadows[24]
     ],
+    breakpoints: {
+      values: {
+        xs: 0,
+        sm: 600,
+        md: 900,
+        lg: 1200,
+        xl: 1536,
+        xxl: 1800 // custom
+      }
+    }
+    ,
     typography: {
       fontSize: 14,
       fontFamily: 'Poppins, sans-serif',
@@ -117,6 +128,13 @@ function App() {
         styleOverrides: {
           primary: {
             fontSize: '14px'
+          }
+        }
+      },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: {
+            borderRadius: 8
           }
         }
       }

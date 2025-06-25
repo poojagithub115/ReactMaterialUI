@@ -1,18 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Grid, Paper, Container, Card, Avatar, Typography, Button, Stack, Chip, Skeleton, Link as MUILink, Drawer, IconButton } from '@mui/material';
+import { Box, Grid, Container, Card, Avatar, Typography, Stack, Chip, Skeleton, Link as MUILink, IconButton } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 import { createTheme } from '@mui/material/styles';
-import { DataGrid } from '@mui/x-data-grid';
 // import { DataGridPro } from '@mui/x-data-grid-pro';
 import FmdGoodOutlinedIcon from '@mui/icons-material/FmdGoodOutlined';
-import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
-import { Edit, StarRateRounded } from '@mui/icons-material';
-import { positions } from 'slate';
+import { Edit } from '@mui/icons-material';
 import { Link as RLink } from 'react-router-dom'
 import JobDetailDialog from './JobDetailDialog';
-
 import { useGetUsersQuery } from 'api/userApi';
-import { CardContainer } from './Styled/Styled';
+import { CardContainer } from '../Styled/Styled';
+import EditJob from './EditJob';
 
 
 
@@ -82,6 +79,7 @@ export default function Product() {
     const [users, setUsers] = useState([]);
     const [SelectedID, SetSelectedId] = useState(null);
     const [open, setOpen] = useState(false);
+    const [opneEditt, setOpneEditt] = useState(false);
 
     const { data: data, error, isLoading } = useGetUsersQuery();
 
@@ -89,12 +87,16 @@ export default function Product() {
         setOpen(state);
         SetSelectedId(id)
     };
+    const opnEditFun = (state, id = null) => () => {
+        setOpneEditt(state);
+        SetSelectedId(id)
+    };
 
     useEffect(() => {
         // setLoading(true);
         setTimeout(() => {
             setUsers(data)
-        }, 1500);
+        }, 2000);
 
     }, []);
 
@@ -106,7 +108,7 @@ export default function Product() {
                 </div>
                 <Grid container spacing={2} >
                     {isLoading ? Array.from(new Array(9)).map((_, index) => (
-                        <Grid xs={12} sm={6} md={4} size={4} key={index}>
+                        <Grid items size={{ xs: 12, sm: 6, md: 6, lg: 4 }} key={index}>
                             <Card sx={{ mt: 4, p: 3, }}>
                                 <Skeleton animation="wave" variant="rounded" width={40} height={40} sx={{ mb: 2 }}><Avatar /></Skeleton>
                                 <Skeleton animation="wave" variant="rounded" width={320} height={15} />
@@ -119,20 +121,22 @@ export default function Product() {
                             </Card></Grid>))
                         :
                         data.map(u => (
-                            <Grid xs={12} sm={6} md={4} size={4} key={u.id}>
+                            <Grid items size={{ xs: 12, sm: 6, md: 6, lg: 4 }} key={u.id}>
                                 {/* <Item> */}
-                                <CardContainer sx={{ mt: 4, p: 3, '&:hover .edit-icon': { opacity: 1 } }}>
-                                    <Box display="flex" flexDirection="column">
+                                <CardContainer sx={{ width: '100%', mt: 4, p: 3, '&:hover .edit-icon': { opacity: 1 } }}>
+                                    <Box display="flex" flexDirection="column" sx={{ width: '100%' }}>
                                         {/* to={`ProductsDetails/:${u.id}`}  */}
                                         <Stack direction={'row'} justifyContent={'space-between'} alignItems={'flex-start'}>
                                             <Avatar variant="rounded" sx={{ width: 40, height: 40, mb: 2 }} src={u.company.logo}></Avatar>
-                                            <IconButton onClick={toggleDrawer(true, u.id)} component={RLink} className='edit-icon' sx={{
+                                            <IconButton onClick={opnEditFun(true, u.id)} className='edit-icon' sx={{
                                                 opacity: 0,
                                                 transition: 'opacity 0.3s ease-in-out',
-                                            }}><Edit sx={{ fontSize: '16px' }} /></IconButton></Stack>
+                                            }}><Edit sx={{ fontSize: '16px' }} />
+                                            </IconButton>
+                                        </Stack>
                                         <MUILink component={RLink} underline="hover" onClick={toggleDrawer(true, u.id)} variant="h6" >{u.title}</MUILink>
                                         <Typography variant="subtitle1" color="text.primary">{u.company.name}</Typography>
-                                        <Stack direction='row' spacing={1} sx={{ my: 1 }}>
+                                        <Stack direction='row' sx={{ my: 1 }} flexWrap={'wrap'} gap={.5}>
                                             {u.tags.map(t => <Chip key={t} size='small' variant='outlined' label={t} />)}
                                         </Stack>
                                         <Stack direction='row' spacing={0.5} sx={{ alignItems: 'center' }}>
@@ -156,6 +160,7 @@ export default function Product() {
                                 {/* </Item>  */}
                             </Grid>))}
                     <JobDetailDialog open={open} toggleDrawer={toggleDrawer(false)} id={SelectedID} />
+                    <EditJob opnEditFun={opnEditFun(false)} id={SelectedID} opneEditt={opneEditt} />
                 </Grid>
             </Box>
 

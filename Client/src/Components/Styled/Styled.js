@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Drawer, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 
@@ -27,5 +27,27 @@ export const CardContainer = styled(Box)(({ theme }) => ({
     backgroundColor: '#fff',
     borderRadius: theme.shape.borderRadius[2],
     boxShadow: theme.shadows[1],
+    width: '100%'
 }));
 
+
+export const SideModal = styled(Drawer)(({ theme }) => ({
+    '& .MuiDrawer-paper': {
+        borderRadius: (theme) => `${theme.shape.borderRadius[0]}px`,
+        padding: '20px',
+        bottom: 0,
+        width: '40%',
+        top: 'unset',
+        bottom: '0',
+        height: 'calc(100% - 64px)',
+        [theme.breakpoints.up('xs')]: {
+            minWidth: '80%'
+        },
+        [theme.breakpoints.up('md')]: {
+            minWidth: '50%'
+        },
+        [theme.breakpoints.up('xl')]: {
+            minWidth: '40%'
+        },
+    },
+}))
