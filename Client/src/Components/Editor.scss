@@ -1,0 +1,18 @@
+/* editor.css */
+
+/* Style the editor container */
+.editor-container {
+    border: 1px solid #ccc;
+    padding: 16px;
+    border-radius: 8px;
+    min-height: 300px;
+    background-color: #fafafa;
+  }
+  
+  /* Optional: Style the content inside the editor */
+  .editor-container p {
+    font-size: 16px;
+    line-height: 1.5;
+    color: #333;
+  }
+  
