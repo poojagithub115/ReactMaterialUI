@@ -1,4 +1,4 @@
-import { FileUpload, FileUploadRounded, Image, SearchOff } from '@mui/icons-material';
+                    import { FileUpload, FileUploadRounded, Image, SearchOff } from '@mui/icons-material';
 import { Avatar, Box, Button, DialogTitle, Divider, Drawer, Autocomplete, IconButton, InputAdornment, Stack, TextField, Typography, useTheme, CircularProgress, Select, MenuItem, OutlinedInput, Chip, FormControl, InputLabel, Checkbox, ListItemText } from '@mui/material'
 import { SideModal } from 'Components/Styled/Styled';
 import React, { useEffect, useState } from 'react'
@@ -63,18 +63,11 @@ function EditJob({ opneEditt, opnEditFun, id }) {
             office: '',
         },
         responsibilities: '',
-        requirements: ''
+        requirements: '',
+        employmentType: '',
+        locationType: ''
     });
 
-
-    const MenuProps = {
-        PaperProps: {
-            style: {
-                maxHeight: 48 * 4.5 + 8,
-                width: 250,
-            },
-        },
-    };
 
     const [query, setQuery] = useState('');
     const [options, setOptions] = useState([]);
@@ -136,10 +129,12 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                 office: userData?.company?.images.office || ''
             },
             responsibilities: userData?.responsibilities.join(',\n'),
-            requirements: userData?.requirements.join(',\n')
+            requirements: userData?.requirements.join(',\n'),
+            employmentType: userData?.employmentType || '',
+            locationType: userData?.locationType || '',
         })
 
-
+        console.log(formData.employmentType)
 
         const delayDebounce = setTimeout(() => {
             if (query.length < 3) return;
@@ -177,7 +172,8 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                     borderWidth: '1px', margin: '15px 0',
                     borderColor: 'rgba(0, 0, 0, 0.12)', // optional: match MUI's default color
                 }} />
-                <Box sx={{ mt: 2 }} gap={15}>
+                <Box sx={{}}>
+                    {/* =============================================== */}
                     <TextField
                         label="Job title"
                         id="custom-input"
@@ -193,7 +189,7 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                             },
                         }}
                     />
-
+                    {/* =============================================== */}
                     <Typography variant='caption'>Company Details</Typography>
                     <TextField
                         label="Name"
@@ -209,8 +205,8 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                             },
                         }}
                     />
-
-                    <Stack direction={'column'} alignItems={'flex-start'} mb={4}>
+                    {/* =============================================== */}
+                    <Stack direction={'column'} alignItems={'flex-start'} mb={5}>
                         <Typography mb={.5} variant='smallerText'>Logo</Typography>
                         <Button variant="outlined" sx={{ marginBottom: 1 }} component="label">
                             <FileUploadRounded /> Choose Logo
@@ -222,7 +218,7 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                             sx={{ width: 80, height: 80 }}
                         />}
                     </Stack>
-
+                    {/* =============================================== */}
                     <Autocomplete
                         fullWidth
                         InputLabelProps={{ shrink: true }}
@@ -269,7 +265,7 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                         )
                         }
                     />
-
+                    {/* =============================================== */}
                     <TextField
                         label="Website"
                         value={formData?.cwebsite}
@@ -284,7 +280,7 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                             },
                         }}
                     />
-
+                    {/* =============================================== */}
                     <Stack direction={'column'} alignItems={'flex-start'} mb={4}>
                         <Typography mb={.5} variant='smallerText'>Banner</Typography>
                         <Button variant="outlined" sx={{ marginBottom: 1 }} component="label">
@@ -297,6 +293,7 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                             sx={{ width: 80, height: 80 }}
                         />}
                     </Stack>
+                    {/* =============================================== */}
                     <Stack direction={'column'} alignItems={'flex-start'} mb={4}>
                         <Typography mb={.5} variant='smallerText'>Office</Typography>
                         <Button variant="outlined" sx={{ marginBottom: 1 }} component="label">
@@ -309,7 +306,7 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                             sx={{ width: 80, height: 80 }}
                         />}
                     </Stack>
-
+                    {/* =============================================== */}
                     <TextField
                         minRows={3}
                         label="Description"
@@ -323,6 +320,7 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                         // onChange={(e) => setRequirement(e.target.value)}
                         // hiddenLabel
                         fullWidth
+
                         InputLabelProps={{ shrink: true }}
                         sx={{
                             '& .MuiOutlinedInput-root': {
@@ -334,6 +332,7 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                             },
                         }}
                     />
+                    {/* =============================================== */}
                     <TextField
                         label="Responsibilites"
                         margin="normal"
@@ -345,6 +344,7 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                         maxRows={8}
                         InputLabelProps={{ shrink: true }}
                     />
+                    {/* =============================================== */}
                     <TextField
                         label="Requirements"
                         margin="normal"
@@ -356,7 +356,8 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                         maxRows={8}
                         InputLabelProps={{ shrink: true }}
                     />
-                    <FormControl fullWidth>
+                    {/* =============================================== */}
+                    <FormControl fullWidth sx={{ mb: 3.5 }}>
                         <InputLabel id="demo-multiple-checkbox-label">Tag</InputLabel>
                         <Select
                             label="Tags"
@@ -374,16 +375,70 @@ function EditJob({ opneEditt, opnEditFun, id }) {
                                     ))}
                                 </Box>
                             )}
-                            MenuProps={MenuProps}
-                        >
-                            {ListTags.map(({ jobType }) => (
-                                <MenuItem
-                                    key={jobType} value={jobType}>
-                                    <Checkbox checked={formData?.tags.includes(jobType)} />
-                                    <ListItemText primary={jobType} />
-                                    {jobType}
-                                </MenuItem>
+                            MenuProps={{
+                                PaperProps: {
+                                    style: {
+                                        boxShadow: '0px 4px 10px rgba(0,0,0,0.15)',
+                                        maxHeight: 48 * 4.5 + 8,
+                                        width: 250,
+                                    },
+                                },
+                            }}>{ListTags.map(({ jobType }) => (<MenuItem
+                                key={jobType} value={jobType}>
+                                <Checkbox checked={formData?.tags.includes(jobType)} />
+                                <ListItemText primary={jobType} />
+                                {jobType}
+                            </MenuItem>
                             ))}
+                        </Select>
+                    </FormControl>
+                    {/* =============================================== */}
+                    <FormControl fullWidth sx={{ mb: 3.5 }} >
+                        <InputLabel id="demo-multiple-checkbox-label">Employement Type</InputLabel>
+                        <Select
+                            label="Employement Type"
+                            name='employmentType'
+                            fullWidth
+                            value={formData?.employmentType}
+                            onChange={handleChange}
+                            // input={<OutlinedInput id="select-multiple-chip" label="Employement Type" />}
+                            MenuProps={{
+                                PaperProps: {
+                                    style: {
+                                        boxShadow: '0px 4px 10px rgba(0,0,0,0.15)',
+                                        maxHeight: 48 * 4.5 + 8,
+                                        width: 250,
+                                    },
+                                },
+                            }}>
+                            <MenuItem value={'Full-Time'}>Full time</MenuItem>
+                            <MenuItem value={'Part-Time'}>Part time</MenuItem>
+                            <MenuItem value={'Contract'}>Contract</MenuItem>
+                            <MenuItem value="Internship">Internship</MenuItem>
+                        </Select>
+                    </FormControl>
+                    {/* =============================================== */}
+                    <FormControl fullWidth sx={{ mb: 3 }} >
+                        <InputLabel id="demo-multiple-checkbox-label">Location Type</InputLabel>
+                        <Select
+                            label="Location Type"
+                            name='locationType'
+                            fullWidth
+                            value={formData?.locationType}
+                            onChange={handleChange}
+                            // input={<OutlinedInput id="select-multiple-chip" label="Employement Type" />}
+                            MenuProps={{
+                                PaperProps: {
+                                    style: {
+                                        boxShadow: '0px 4px 10px rgba(0,0,0,0.15)',
+                                        maxHeight: 48 * 4.5 + 8,
+                                        width: 250,
+                                    },
+                                },
+                            }}>
+                            <MenuItem value={'Hybrid'}>Hybrid</MenuItem>
+                            <MenuItem value={'Remote'}>Remote</MenuItem>
+                            <MenuItem value={'On-Site'}>On Site</MenuItem>
                         </Select>
                     </FormControl>
 
