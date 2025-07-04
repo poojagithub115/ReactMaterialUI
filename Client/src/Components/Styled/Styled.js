@@ -1,15 +1,14 @@
-import { Box, Drawer, Typography } from '@mui/material';
+import { Box, Drawer } from '@mui/material';
 import { styled } from '@mui/material/styles';
-
 
 export const BannerImage = styled('img')({
     width: '100%',
     height: '200px',
     objectFit: 'cover',
-    borderRadius: 8,
+    borderRadius: (theme) => `${theme.shape.borderRadius[1]}px`,
 });
 export const CompnyLogo = styled('img')(({ theme }) => ({
-    padding: 1, position: 'absolute',
+    padding: theme.spacing(2), position: 'absolute',
     top: 185,
     left: 15,
     zIndex: 8,
@@ -33,8 +32,8 @@ export const CardContainer = styled(Box)(({ theme }) => ({
 
 export const SideModal = styled(Drawer)(({ theme }) => ({
     '& .MuiDrawer-paper': {
-        borderRadius: (theme) => `${theme.shape.borderRadius[0]}px`,
-        padding: '20px',
+        borderRadius: (theme) => `${theme.shape.borderRadius[1]}px`,
+        padding: theme.spacing(4),
         bottom: 0,
         width: '40%',
         top: 'unset',
