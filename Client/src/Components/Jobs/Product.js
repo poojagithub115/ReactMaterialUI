@@ -17,15 +17,17 @@ const defaultTheme = createTheme();
 const useStyles = makeStyles((theme) => ({
     root: {
         flexGrow: 1,
+
     },
-    paper: {
-        padding: theme.spacing(15),
-        textAlign: 'center',
-        color: theme.palette.text.primary,
-    },
+    // paper: {
+    //     padding: theme.spacing(15),
+    //     textAlign: 'center',
+    //     color: theme.palette.text.primary,
+    // },
     title: {
         color: theme.palette.text.secondary,
         fontWeight: 'bold',
+        padding: '20px 0'
     },
 }), { defaultTheme });
 
@@ -81,7 +83,7 @@ export default function Product() {
     const [open, setOpen] = useState(false);
     const [opneEditt, setOpneEditt] = useState(false);
 
-    const { data: data, error, isLoading } = useGetUsersQuery();
+    const { data: records, error, isLoading, refetch } = useGetUsersQuery();
 
     const toggleDrawer = (state, id = null) => () => {
         setOpen(state);
@@ -93,22 +95,22 @@ export default function Product() {
     };
 
     useEffect(() => {
-        // setLoading(true);
         setTimeout(() => {
-            setUsers(data)
+            setUsers(records)
         }, 2000);
+        refetch();
 
-    }, []);
+    }, [records]);
 
     return (
         <Container>
-            <Box sx={{ flexGrow: 1, mt: 5 }}>
+            <Box sx={{ flexGrow: 1, mt: 15 }}>
                 <div className={styles.root}>
                     <h1 className={styles.title}>Jobs</h1>
                 </div>
-                <Grid container spacing={2} >
+                <Grid container spacing={3} >
                     {isLoading ? Array.from(new Array(9)).map((_, index) => (
-                        <Grid items size={{ xs: 12, sm: 6, md: 6, lg: 4 }} key={index}>
+                        <Grid items='true' size={{ xs: 12, sm: 6, md: 6, lg: 4 }} key={index}>
                             <Card sx={{ mt: 4, p: 3, }}>
                                 <Skeleton animation="wave" variant="rounded" width={40} height={40} sx={{ mb: 2 }}><Avatar /></Skeleton>
                                 <Skeleton animation="wave" variant="rounded" width={320} height={15} />
@@ -120,10 +122,10 @@ export default function Product() {
                                 <Skeleton animation="wave" variant="rounded" width={320} height={15} sx={{ mb: 1 }} />
                             </Card></Grid>))
                         :
-                        data.map(u => (
-                            <Grid items size={{ xs: 12, sm: 6, md: 6, lg: 4 }} key={u.id}>
+                        Array.isArray(records) && records.map(u => (
+                            <Grid items='true' size={{ xs: 12, sm: 6, md: 6, lg: 4 }} key={u.id}>
                                 {/* <Item> */}
-                                <CardContainer sx={{ width: '100%', mt: 4, p: 3, '&:hover .edit-icon': { opacity: 1 } }}>
+                                <CardContainer sx={{ width: '100%', p: 3, '&:hover .edit-icon': { opacity: 1 } }}>
                                     <Box display="flex" flexDirection="column" sx={{ width: '100%' }}>
                                         {/* to={`ProductsDetails/:${u.id}`}  */}
                                         <Stack direction={'row'} justifyContent={'space-between'} alignItems={'flex-start'}>
@@ -136,16 +138,17 @@ export default function Product() {
                                         </Stack>
                                         <MUILink component={RLink} underline="hover" onClick={toggleDrawer(true, u.id)} variant="h6" >{u.title}</MUILink>
                                         <Typography variant="subtitle1" color="text.primary">{u.company.name}</Typography>
-                                        <Stack direction='row' sx={{ my: 1 }} flexWrap={'wrap'} gap={.5}>
-                                            {u.tags.map(t => <Chip key={t} size='small' variant='outlined' label={t} />)}
+                                        <Stack direction='row' sx={{ my: 1 }} flexWrap={'wrap'} gap={'6px'}>
+                                            {u.tags.slice(0, 3).map((t) => <Chip key={t} size='small' variant='outlined' label={t} />)}
+                                            <Chip label={'2+'} size='small' variant='outlined' />
                                         </Stack>
-                                        <Stack direction='row' spacing={0.5} sx={{ alignItems: 'center' }}>
+                                        <Stack direction='row' gap={'6px'} sx={{ alignItems: 'center' }}>
                                             <FmdGoodOutlinedIcon sx={{ fontSize: (theme) => theme.palette.common.iconSizes.small }} />
                                             <Typography variant='subtitle1' >{u.company.location}</Typography>
                                         </Stack>
                                         {/* <Button variant="outlined" sx={{ mt: 2 }}>Apply</Button> */}
 
-                                        <Stack direction='row' justifyContent={'flex-end'} spacing={0.5} sx={{ mt: 1, alignItems: 'center' }}>
+                                        <Stack direction='row' justifyContent={'flex-end'} spacing={1} sx={{ mt: 1, alignItems: 'center' }}>
                                             {/* <CalendarTodayOutlinedIcon sx={{
                                                 fontSize: (theme) => theme.palette.common.iconSizes.small
                                             }} /> */}
@@ -159,8 +162,8 @@ export default function Product() {
                                 </CardContainer>
                                 {/* </Item>  */}
                             </Grid>))}
-                    <JobDetailDialog open={open} toggleDrawer={toggleDrawer(false)} id={SelectedID} />
-                    <EditJob opnEditFun={opnEditFun(false)} id={SelectedID} opneEditt={opneEditt} />
+                    <JobDetailDialog open={open} onRefetch={refetch} toggleDrawer={toggleDrawer(false)} id={SelectedID} />
+                    <EditJob onRefetch={refetch} opnEditFun={opnEditFun(false)} id={SelectedID} opneEditt={opneEditt} />
                 </Grid>
             </Box>
 
