@@ -46,9 +46,30 @@ function App() {
     },
     shadows: [
       'none',
-      '0px 1px 3px rgba(0,0,0,0.2), 0px 1px 1px rgba(0,0,0,0.14), 0px 2px 1px rgba(0,0,0,0.12)',
-      '...',
-      // up to shadows[24]
+      '0px 1px 3px rgba(0,0,0,0.12), 0px 1px 2px rgba(0,0,0,0.24)',
+      '0px 2px 4px rgba(0,0,0,0.14), 0px 2px 3px rgba(0,0,0,0.20)',
+      '0px 3px 6px rgba(0,0,0,0.16), 0px 3px 4px rgba(0,0,0,0.22)',
+      '0px 4px 8px rgba(0,0,0,0.18), 0px 4px 5px rgba(0,0,0,0.24)',
+      '0px 5px 10px rgba(0,0,0,0.20), 0px 5px 6px rgba(0,0,0,0.26)',
+      '0px 6px 12px rgba(0,0,0,0.22), 0px 6px 7px rgba(0,0,0,0.28)',
+      '0px 7px 14px rgba(0,0,0,0.24), 0px 7px 8px rgba(0,0,0,0.30)',
+      '0px 8px 16px rgba(0,0,0,0.26), 0px 8px 9px rgba(0,0,0,0.32)',
+      '0px 9px 18px rgba(0,0,0,0.28), 0px 9px 10px rgba(0,0,0,0.34)',
+      '0px 10px 20px rgba(0,0,0,0.30), 0px 10px 11px rgba(0,0,0,0.36)',
+      '0px 11px 22px rgba(0,0,0,0.32), 0px 11px 12px rgba(0,0,0,0.38)',
+      '0px 12px 24px rgba(0,0,0,0.34), 0px 12px 13px rgba(0,0,0,0.40)',
+      '0px 13px 26px rgba(0,0,0,0.36), 0px 13px 14px rgba(0,0,0,0.42)',
+      '0px 14px 28px rgba(0,0,0,0.38), 0px 14px 15px rgba(0,0,0,0.44)',
+      '0px 15px 30px rgba(0,0,0,0.40), 0px 15px 16px rgba(0,0,0,0.46)',
+      '0px 16px 32px rgba(0,0,0,0.42), 0px 16px 17px rgba(0,0,0,0.48)',
+      '0px 17px 34px rgba(0,0,0,0.44), 0px 17px 18px rgba(0,0,0,0.50)',
+      '0px 18px 36px rgba(0,0,0,0.46), 0px 18px 19px rgba(0,0,0,0.52)',
+      '0px 19px 38px rgba(0,0,0,0.48), 0px 19px 20px rgba(0,0,0,0.54)',
+      '0px 20px 40px rgba(0,0,0,0.50), 0px 20px 21px rgba(0,0,0,0.56)',
+      '0px 21px 42px rgba(0,0,0,0.52), 0px 21px 22px rgba(0,0,0,0.58)',
+      '0px 22px 44px rgba(0,0,0,0.54), 0px 22px 23px rgba(0,0,0,0.60)',
+      '0px 23px 46px rgba(0,0,0,0.56), 0px 23px 24px rgba(0,0,0,0.62)',
+      '0px 24px 48px rgba(0,0,0,0.58), 0px 24px 25px rgba(0,0,0,0.64)',
     ],
     breakpoints: {
       values: {
@@ -98,7 +119,7 @@ function App() {
         color: '#333'
       }
     },
-    spacing: 8, // base spacing unit (8px)
+    spacing: 6, // base spacing unit (8px)
     components: {
       MuiCard: {
         styleOverrides: {
@@ -113,7 +134,11 @@ function App() {
       MuiAvatar: {
         styleOverrides: {
           root: {
-            borderRadius: 8
+            borderRadius: 8,
+            '&.MuiAvatar-size8': {
+              width: 80,
+              height: 80
+            }
           }
         }
       },
@@ -134,7 +159,41 @@ function App() {
       MuiOutlinedInput: {
         styleOverrides: {
           root: {
-            borderRadius: 8
+            borderRadius: 8,
+            marginBottom: 14,
+            // '.MuiOutlinedInput-root': {
+            //   borderRadius: 1, // change this value as needed
+            // },
+          }
+        }
+      },
+      MuiTextField: {
+        styleOverrides: {
+          root: {
+            marginBottom: 14,
+            fontSize: 14,
+            '.MuiOutlinedInput-root': {
+              // borderRadius: 10, // change this value as needed
+            },
+            '& .MuiOutlinedInput-root textarea': {
+              resize: 'vertical', // This allows the user to resize the textarea
+            },
+          }
+        }
+      },
+      MuiInputLabel: {
+        styleOverrides: {
+          root: {
+            color: '#333'
+          }
+        }
+      },
+      MuiAccordion: {
+        styleOverrides: {
+          root: {
+            borderRadius: 5,
+            boxShadow: 'none',
+            border: '1px solid #eee'
           }
         }
       }
