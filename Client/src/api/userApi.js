@@ -13,8 +13,22 @@ export const userApi = createApi({
                 body: data,
             }),
         }),
+        postUser: builder.mutation({
+            query: ({ data }) => ({
+                url: `users/`,
+                method: 'POST',
+                body: data,
+            })
+        }),
+        deleteUser: builder.mutation({
+            query: (id) => ({
+              url: `/users/${id}`,
+              method: 'DELETE',
+            }),
+            // invalidatesTags: ['Job'],
+          }),
     })
 
 })
 // console.log(userApi)
-export const { useGetUsersQuery, useGetUserByIdQuery, usePostUserByIDMutation } = userApi;
+export const { useGetUsersQuery, useGetUserByIdQuery, usePostUserByIDMutation, usePostUserMutation, useDeleteUserMutation } = userApi;
