@@ -11,7 +11,7 @@ import BusinessCenterRoundedIcon from '@mui/icons-material/BusinessCenterRounded
 
 function JobDetailDialog({ open, toggleDrawer, id, onRefetch }) {
     const theme = useTheme();
-    const { data: user, error, isLoading,refetch  } = useGetUserByIdQuery(id);
+    const { data: user, error, isLoading, refetch } = useGetUserByIdQuery(id);
     let dollarSign = user?.salary?.currency == 'USD' ? <AttachMoneyRoundedIcon sx={{ fontSize: (theme) => theme.palette.common.iconSizes.small, mr: .5 }} /> : <CurrencyRupeeRoundedIcon sx={{ fontSize: (theme) => theme.palette.common.iconSizes.small, mr: .5 }} />
 
     // useEffect(() => {
@@ -22,7 +22,7 @@ function JobDetailDialog({ open, toggleDrawer, id, onRefetch }) {
             refetch();
         }
     }, [open, user]);
-    
+
 
     return (
         <SideModal
@@ -31,7 +31,7 @@ function JobDetailDialog({ open, toggleDrawer, id, onRefetch }) {
             onClose={toggleDrawer}>
             <Box role="presentation" sx={{ position: 'relative' }}>
                 <img
-                    src={user?.company.images.banner}
+                    src={user?.company?.images?.banner}
                     style={{
                         width: '100%',
                         height: '230px',
@@ -47,14 +47,14 @@ function JobDetailDialog({ open, toggleDrawer, id, onRefetch }) {
                         <Typography color="error">Error loading job</Typography>
                     ) : (
                         <>
-                            <CompnyLogo src={user?.company.logo} />
+                            <CompnyLogo src={user?.company?.logo} />
                             <Box sx={{ paddingTop: 6 }}>
                                 <Stack direction={'row'} alignItems={'flex-start'} justifyContent={'space-between'}>
                                     <Stack>
                                         <Typography variant="subtitle2" >
-                                            {user?.company.name}
+                                            {user?.company?.name}
                                         </Typography>
-                                        <Stack direction={{ lg: 'row', sm: 'column' }} mb={{ lg: 0, sm: 2 }} gap={{ lg: 3, sm: 1 }} justifyContent={'flex-start'} alignItems={{ lg: 'center', sm: 'flex-start' }} >
+                                        <Stack direction={{ lg: 'row', sm: 'column' }} mt={1} mb={{ lg: 2, sm: 2 }} gap={{ lg: 3, sm: 1 }} justifyContent={'flex-start'} alignItems={{ lg: 'center', sm: 'flex-start' }} >
                                             <Typography variant="h5" >
                                                 {user?.title}
                                             </Typography>
@@ -66,13 +66,13 @@ function JobDetailDialog({ open, toggleDrawer, id, onRefetch }) {
                                         </Typography>
                                         <Typography variant="caption" display="block">
                                             {dollarSign}
-                                            {user?.salary?.min} - {user?.salary?.max} {user?.salary?.type == 'Annual' ? 'Per Annual' : 'Per Month'}
+                                            {user?.salary?.min || ''} - {user?.salary?.max} {user?.salary?.type == 'Annual' ? 'Per Annual' : 'Per Month'}
                                         </Typography>
 
                                         {/* -------------------------------- */}
                                         <Typography variant="caption" display="block" >
                                             <BusinessCenterRoundedIcon sx={{ fontSize: (theme) => theme.palette.common.iconSizes.small, mr: '6px' }} />
-                                            {user?.experienceLevel}
+                                            {user?.experienceLevel || 'N.A'}
                                         </Typography>
 
                                         {/* -------------------------------- */}
@@ -85,7 +85,7 @@ function JobDetailDialog({ open, toggleDrawer, id, onRefetch }) {
                                         <Stack direction='column' spacing={1} sx={{ my: 1 }}>
                                             <Typography variant="caption" display="block" sx={{ mt: 1 }}>
                                                 Must have skils :
-                                                <Typography variant="p" display="block" flexWrap={'wrap'}> {user.tags.map(t => t += ', ')}</Typography>
+                                                <Typography variant="p" display="block" flexWrap={'wrap'}> {user?.tags?.map(t => t += ', ')}</Typography>
                                             </Typography>
 
                                         </Stack>
@@ -148,24 +148,24 @@ function JobDetailDialog({ open, toggleDrawer, id, onRefetch }) {
                                         Requirements
                                     </Typography>
                                     <List>
-                                        {
-                                            Array.isArray(user?.requirements) ? user?.requirements.map(r => (
-                                                <ListItem disablePadding key={r}>
-                                                    <ListItemIcon sx={{ minWidth: 24, }}>
-                                                        <FiberManualRecordIcon sx={{ fontSize: 8 }} />
-                                                    </ListItemIcon>
-                                                    <ListItemText primary={r} />
-                                                </ListItem>
-                                            )) :
-                                                (user?.requirements.split(',').map(r => (
-                                                    <ListItem disablePadding key={r}>
+
+                                        {(Array.isArray(user?.responsibilities)
+                                            ? user.responsibilities
+                                            : user?.responsibilities?.split(',')
+                                        )
+                                            ?.map((r, index) => {
+                                                const item = r?.trim();
+                                                return item ? (
+
+                                                    <ListItem disablePadding key={`${item}-${index}`}>
                                                         <ListItemIcon sx={{ minWidth: 24, }}>
                                                             <FiberManualRecordIcon sx={{ fontSize: 8 }} />
                                                         </ListItemIcon>
-                                                        <ListItemText primary={r} />
+                                                        <ListItemText primary={item} />
                                                     </ListItem>
-                                                )))
-                                        }
+                                                ) : null
+                                            })}
+
                                     </List>
 
                                 </Stack>
