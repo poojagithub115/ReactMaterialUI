@@ -25,8 +25,12 @@ export const CardContainer = styled(Box)(({ theme }) => ({
     padding: theme.spacing(2),
     backgroundColor: '#fff',
     borderRadius: theme.shape.borderRadius[2],
-    boxShadow: theme.shadows[1],
-    width: '100%'
+    border:'1px solid #ecebeb',
+    width: '100%',
+    '&:hover': {
+        boxShadow: theme.shadows[1],
+        transition:'0.3s all'
+    }
 }));
 
 
