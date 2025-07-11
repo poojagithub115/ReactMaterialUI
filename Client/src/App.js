@@ -37,7 +37,7 @@ function App() {
       },
       text: {
         primary: '#666',
-        secondary: '#ffd500',
+        secondary: '#333',
         dividerLine: '#e4e4e4'
       }
     },
@@ -46,6 +46,7 @@ function App() {
     },
     shadows: [
       'none',
+      '3px 3px 20px rgba(0,0,0,0.18)',
       '0px 1px 3px rgba(0,0,0,0.12), 0px 1px 2px rgba(0,0,0,0.24)',
       '0px 2px 4px rgba(0,0,0,0.14), 0px 2px 3px rgba(0,0,0,0.20)',
       '0px 3px 6px rgba(0,0,0,0.16), 0px 3px 4px rgba(0,0,0,0.22)',
@@ -167,6 +168,9 @@ function App() {
           }
         }
       },
+      MuiSelect: {
+
+      },
       MuiTextField: {
         styleOverrides: {
           root: {
@@ -178,15 +182,33 @@ function App() {
             '& .MuiOutlinedInput-root textarea': {
               resize: 'vertical', // This allows the user to resize the textarea
             },
-          }
-        }
+            defaultProps: {
+              // InputLabelProps: { shrink: true },
+            },
+          },
+
+        },
+        defaultProps: {
+          // InputLabelProps: { shrink: true },
+        },
+      },
+      MuiFormControl: {
+        defaultProps: {
+          // InputLabelProps: { shrink: true },
+        },
       },
       MuiInputLabel: {
         styleOverrides: {
           root: {
-            color: '#333'
-          }
-        }
+            color: '#333',
+            background: '#fff',
+            padding: '0 5px'
+          },
+
+        },
+        defaultProps: {
+          shrink: true
+        },
       },
       MuiAccordion: {
         styleOverrides: {
