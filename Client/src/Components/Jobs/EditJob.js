@@ -1,17 +1,18 @@
 import { FileUpload, FileUploadRounded, Image, SearchOff } from '@mui/icons-material';
-import { Avatar, Box, Button, DialogTitle, Divider, Drawer, Autocomplete, IconButton, InputAdornment, Stack, TextField, Typography, useTheme, CircularProgress, Select, MenuItem, OutlinedInput, Chip, FormControl, InputLabel, Checkbox, ListItemText, Accordion, AccordionSummary, AccordionDetails } from '@mui/material'
+import { Avatar, Box, Button, DialogTitle, Divider, Drawer, Autocomplete, IconButton, InputAdornment, Stack, TextField, Typography, useTheme, CircularProgress, Select, MenuItem, OutlinedInput, Chip, FormControl, InputLabel, Checkbox, ListItemText, Accordion, AccordionSummary, AccordionDetails, FormHelperText } from '@mui/material'
 import { SideModal } from 'Components/Styled/Styled';
 import React, { useEffect, useState } from 'react'
 import MyLocationIcon from '@mui/icons-material/MyLocation';
-import { useGetUserByIdQuery, useGetUsersQuery, usePostUserByIDMutation } from 'api/userApi';
+import { useGetUserByIdQuery, usePostUserByIDMutation, usePostUserMutation } from 'api/userApi';
 import TextareaAutosize from '@mui/material/TextareaAutosize';
 import { GridArrowDownwardIcon } from '@mui/x-data-grid';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
 
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import Toast from './Toast';
 
-
-function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
+function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
 
     // const { refetch } = useGetUsersQuery();
     let ListTags = [{
@@ -50,52 +51,61 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
     {
         "jobType": "Coordinator"
     }]
-    const { data: userData, error, isLoading } = useGetUserByIdQuery(id);
+    const { data: userData, error, isLoading } = useGetUserByIdQuery(id, {
+        skip: !id, // <-- skip the query if id is not present
+    });
     const [postUserByID, { isLoadingg, isError, isSuccess }] = usePostUserByIDMutation();
+    const [postUser, { data: newJobData, error: NewJobError }] = usePostUserMutation();
+
 
     const [toast, setToast] = useState({
         open: false,
-        severity: 'success',
+        severity: 'info',
         message: '',
     });
-
-
-
     const [formData, setFormData] = useState({
         title: '',
         company: {
-            name: '',
+            name: "",
+            logo: "",
             location: '',
-            website: '',
-            logo: '',
+            website: "",
             images: {
-                banner: '',
-                office: ''
-            },
+                banner: "",
+                office: ""
+            }
         },
         description: '',
-        requirements: '',
-        responsibilities: '',
-        employmentType: '',
+        requirements: [],
+        responsibilities: [],
+        employmentType: "",
+        experienceLevel: "",
         salary: {
             min: '',
             max: '',
-            currency: '',
-            type: '',
+            currency: "",
+            type: ""
         },
-        locationType: '',
-        tags: '',
+        locationType: "",
+        postedDate: new Date(),
+        applicationDeadline: "",
+        tags: [],
+        howToApply: "",
+        status: ""
 
     });
-
-
     const [query, setQuery] = useState('');
     const [options, setOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedValue, setSelectedValue] = useState(null);
+    const [errors, setErrors] = React.useState({});
+
+    const EditMode = mode === 'edit';
+
 
 
     const handleImageChange = (event, Imgtype) => {
+        debugger
         const file = event.target.files?.[0];
         if (file) {
             const imageUrl = URL.createObjectURL(file);
@@ -126,36 +136,37 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
     };
     const handleChange = (e) => {
         const { name, value } = e.target;
-        // setFormData(prev => ({ ...prev, [name]: value }));
-        debugger
-        if (['min', 'max', 'currency', 'type'].includes(name)) {
-            setFormData((prev) => ({
-                ...prev,
-                salary: {
-                    ...prev.salary,
-                    [name]: value
-                }
-            }));
-        } else if (name.startsWith('company.')) {
-            // Handle nested company keys if needed in future
-            const key = name.split('.')[1];
-            console.log(key)
-            setFormData((prev) => ({
-                ...prev,
-                company: {
-                    ...prev.company,
-                    [key]: value
-                }
-            }));
-        } else {
 
-            setFormData((prev) => ({
+        // Helper: Update nested state
+        const updateNestedField = (parentKey, childKey) => {
+            setFormData(prev => ({
+                ...prev,
+                [parentKey]: {
+                    ...prev[parentKey],
+                    [childKey]: value
+                }
+            }));
+        };
+
+        // Handle salary fields (e.g., "salary.min", "salary.currency")
+        if (name.startsWith('salary.')) {
+            const key = name.split('.')[1];
+            updateNestedField('salary', key);
+        }
+        // Handle company fields (e.g., "company.name", "company.website")
+        else if (name.startsWith('company.')) {
+            const key = name.split('.')[1];
+            updateNestedField('company', key);
+        }
+        // Handle top-level fields
+        else {
+            setFormData(prev => ({
                 ...prev,
                 [name]: value
             }));
         }
-
     };
+
 
     const onUseCurrentLocation = () => {
         if (!navigator.geolocation) {
@@ -189,57 +200,180 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
             }
         );
     };
+    const validate = () => {
+        const newErrors = {};
+        const getNestedValue = (obj, path) => {
+            return path.split('.').reduce((acc, key) => (acc ? acc[key] : undefined), obj);
+        };
+        const requiredFields = [
+            { path: 'title', label: 'Job title' },
+            { path: 'description', label: 'Description' },
+            { path: 'company.name', label: 'Company name' },
+            { path: 'company.logo', label: 'Company Logo' },
+            { path: 'company.location', label: 'Company location' },
+            { path: 'company.images.banner', label: 'Company Banner image' },
+            { path: 'company.website', label: 'Company website' },
+            { path: 'salary.min', label: 'Minimum salary' },
+            { path: 'salary.max', label: 'Maximum salary' },
+            { path: 'salary.currency', label: 'Currency' },
+            { path: 'salary.type', label: 'Type' },
+            { path: 'locationType', label: 'Location Type' },
+            { path: 'tags', label: 'Tags' },
+            { path: 'requirements', label: 'Requirement' },
+            { path: 'responsibilities', label: 'Responsibilities' },
+            { path: 'employmentType', label: 'Employment type' },
+            // { path: 'experienceLevel', label: 'Experience level' },
+        ];
 
-    const handleUpdate = async () => {
-        try {
-            const response = await postUserByID({ id, data: formData }).unwrap();
-            setToast({
-                open: true,
-                severity: 'success',
-                message: 'Job updated successfully!',
+        const setNestedError = (obj, path, value) => {
+            const keys = path.split('.');
+            let current = obj;
+            keys.forEach((key, index) => {
+                if (index === keys.length - 1) {
+                    current[key] = value;
+                } else {
+                    current[key] = current[key] || {};
+                    current = current[key];
+                }
             });
-            opnEditFun(false);
-            onRefetch();
-            // console.log(formData)
-        } catch (error) {
+        };
+        requiredFields.forEach(({ path, label }) => {
+            const value = getNestedValue(formData, path);
+            if (!value || (typeof value === 'string' && value.trim() === '') || (Array.isArray(value) && value.length === 0)) {
+                setNestedError(newErrors, path, `${label} is required`);
+            }
+        });
+
+
+
+        setErrors(newErrors);
+        console.log(newErrors)
+        if (Object.keys(newErrors).length > 0 && !toast.open) {
             setToast({
                 open: true,
                 severity: 'error',
-                message: 'Failed to update job.',
+                message: 'Fill required fields',
             });
-            console.error('Update failed:', error);
+        }
+        return Object.keys(newErrors).length === 0;
+    };
+    const handleUpdate = async (mode) => {
+        debugger
+        try {
 
+
+            const formData123 = new FormData();
+            formData123.append('title', formData.title);
+            formData123.append('description', formData.description);
+            formData123.append('employmentType', formData.employmentType);
+            formData123.append('experienceLevel', formData.experienceLevel);
+            formData123.append('locationType', formData.locationType);
+
+            // ✅ Company details
+            formData123.append('company.name', formData.company.name);
+            formData123.append('company.location', formData.company.location);
+            formData123.append('company.website', formData.company.website);
+
+            // ✅ Files
+            formData123.append('company.logo', formData.company.logo);
+            formData123.append('company.images.banner', formData.company.images.banner);
+            formData123.append('company.images.office', formData.company.images.office);
+
+            // ✅ Salary object as JSON string
+            formData123.append('salary', JSON.stringify({
+                min: formData.salary.min,
+                max: formData.salary.max,
+                currency: formData.salary.currency,
+                type: formData.salary.type
+            }));
+
+            // ✅ Tags array
+            formData123.append('tags', JSON.stringify(formData.tags));
+
+            // Other fields
+            formData123.append('responsibilities', formData.responsibilities);
+            formData123.append('requirements', formData.requirements);
+            // formData.append('applicationDeadline', formData.applicationDeadline);
+            // formData.append('howToApply', formData.howToApply);
+            // formData.append('status', formData.status);
+
+
+            if (!validate()) return;
+
+            if (EditMode) {
+                await postUserByID({ id, data: formData }).unwrap();
+                setToast({
+                    open: true,
+                    severity: 'success',
+                    message: 'Success: Job updated!',
+                });
+                opnEditFun(false);  // close drawer after toast is set
+                onRefetch();
+            } else {
+                await postUser({ data: formData }).unwrap(); // <-- use formData here, not newJobData
+                console.log(formData)
+                opnEditFun(false);  // close drawer after toast is set
+                setToast({
+                    open: true,
+                    severity: 'success',
+                    message: 'Success: Job added!',
+                });
+                onRefetch();
+            }
+
+
+
+        } catch (error) {
+
+
+            const errorMessages = error?.data?.details || [];
+
+            console.log(error?.data?.details)
+            // Optional: Combine into one string for toast
+            const combinedMessage = Array.isArray(errorMessages)
+                ? errorMessages.join('\n')
+                : error?.data?.error || 'Failed to submit the job.';
+            setErrors(combinedMessage)
+            setToast({
+                open: true,
+                severity: 'error',
+                message: combinedMessage,
+            });
+
+
+            // Keep drawer open on error (do NOT call opnEditFun(true))
         }
     };
 
     useEffect(() => {
         setFormData({
-            title: userData?.title || '',
+            title: EditMode ? userData?.title || '' : '',
             company: {
-                name: userData?.company?.name || '',
-                location: userData?.company?.location || '',
-                website: userData?.company?.website || '',
-                logo: userData?.company?.logo || '',
+                name: EditMode ? userData?.company?.name || '' : '',
+                location: EditMode ? userData?.company?.location || '' : '',
+                website: EditMode ? userData?.company?.website || '' : '',
+                logo: EditMode ? userData?.company?.logo || '' : '',
                 images: {
-                    banner: userData?.company?.images.banner || '',
-                    office: userData?.company?.images.office || ''
+                    banner: EditMode ? userData?.company?.images?.banner || '' : '',
+                    office: EditMode ? userData?.company?.images?.office || '' : ''
                 },
             },
-            description: userData?.description || '',
-            requirements: userData?.requirements,
-            responsibilities: userData?.responsibilities,
-            employmentType: userData?.employmentType || '',
+            description: EditMode ? userData?.description || '' : '',
+            requirements: EditMode ? userData?.requirements : '',
+            responsibilities: EditMode ? userData?.responsibilities : '',
+            employmentType: EditMode ? userData?.employmentType || '' : '',
             salary: {
-                min: userData?.salary.min || '',
-                max: userData?.salary.max || '',
-                currency: userData?.salary.currency || '',
-                type: userData?.salary.type || '',
+                min: EditMode ? userData?.salary?.min || '' : '',
+                max: EditMode ? userData?.salary?.max || '' : '',
+                currency: EditMode ? userData?.salary?.currency || '' : '',
+                type: EditMode ? userData?.salary?.type || '' : '',
             },
-            locationType: userData?.locationType || '',
-            tags: userData?.tags || '',
+            postedDate: EditMode ? userData?.postedDate : new Date(),
+            locationType: EditMode ? userData?.locationType || '' : '',
+            tags: EditMode ? userData?.tags || '' : '',
         })
 
-    }, [userData]);
+    }, [userData, id]);
 
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
@@ -266,13 +400,18 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
 
     }, [query]);
 
-    return (
+    return (<>
         <SideModal
             anchor="right"
             open={opneEditt}
             onClose={opnEditFun}>
             <Box>
-                <DialogTitle sx={{ padding: '0' }}>{"Edit Job"}</DialogTitle>
+                <Stack direction={'row'} justifyContent={'space-between'}>
+                    <DialogTitle sx={{ padding: '0' }}>{mode == 'edit' ? "Edit Job" : 'Add Job'}</DialogTitle>
+                    <IconButton onClick={opnEditFun} >
+                        <CloseRoundedIcon />
+                    </IconButton>
+                </Stack>
                 <Divider orientation="horizontal" flexItem sx={{
                     borderStyle: 'dotted',
                     borderWidth: '1px', margin: '15px 0',
@@ -282,19 +421,13 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                     {/* =============================================== */}
                     <TextField
                         label="Job title"
-                        id="custom-input"
                         margin="normal"
+                        error={!!errors.title}
+                        helperText={errors.title}
                         name='title'
-                        value={formData?.title}
+                        value={formData?.title || ''}
                         onChange={handleChange}
                         fullWidth
-                    // InputLabelProps={{ shrink: true }}
-
-                    // sx={{
-                    //     '& .MuiOutlinedInput-root': {
-                    //         borderRadius: 8, // change this value as needed
-                    //     },
-                    // }}
                     />
                     <Accordion sx={{ marginBottom: 2 }} defaultExpanded>
                         <AccordionSummary
@@ -308,8 +441,10 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                             {/* =============================================== */}
                             <TextField
                                 label="Name"
-                                value={formData.company.name}
+                                value={formData.company.name || ''}
                                 name='company.name'
+                                error={!!errors.company?.name}
+                                helperText={errors.company?.name}
                                 margin="normal"
                                 onChange={handleChange}
                                 fullWidth
@@ -324,16 +459,23 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                                 </Button>
                                 {formData?.company?.logo && <Avatar
                                     src={formData?.company?.logo}
+
                                     className='MuiAvatar-size8'
                                     alt="Uploaded Preview"
-                                // sx={{ width: 80, height: 80 }}
                                 />}
+
+                                {errors?.company?.logo && (
+                                    <Typography variant="caption" color="error" mt={0.5}>
+                                        {errors.company.logo}
+                                    </Typography>
+                                )}
                             </Stack>
 
                             {/* =============================================== */}
                             <Autocomplete
                                 fullWidth
-                                value={formData?.company?.location}
+                                value={formData?.company?.location || ''}
+
                                 freeSolo
                                 name='company.location'
                                 options={options}
@@ -352,18 +494,18 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                                         },
                                     }));
                                 }}
-
+                                getOptionLabel={(option) =>
+                                    typeof option === 'string' ? option : option?.label || ''
+                                }
                                 renderInput={(params) =>
                                 (
                                     <TextField
+                                        error={!!errors.company?.location}
+                                        helperText={errors.company?.location}
                                         {...params}
-                                        // InputLabelProps={{ shrink: true }}
-
                                         label="Search location"
                                         variant="outlined"
                                         name='company.location'
-                                        // margin="normal"  
-                                        // value={Cordinate}
                                         InputProps={{
                                             ...params.InputProps,
                                             endAdornment: (
@@ -377,11 +519,6 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                                                 </>
                                             )
                                         }}
-                                    // sx={{
-                                    //     '& .MuiOutlinedInput-root': {
-                                    //         borderRadius: 8
-                                    //     }
-                                    // }}
                                     />
                                 )
                                 }
@@ -390,18 +527,14 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                             {/* =============================================== */}
                             <TextField
                                 label="Website"
-                                value={formData.company.website}
+                                value={formData.company.website || ''}
                                 name='company.website'
                                 margin="normal"
                                 fullWidth
                                 onChange={handleChange}
-                            // InputLabelProps={{ shrink: true }}
+                                error={!!errors?.company?.website}
+                                helperText={errors?.company?.website}
 
-                            // sx={{
-                            //     '& .MuiOutlinedInput-root': {
-                            //         borderRadius: 8, // change this value as needed
-                            //     },
-                            // }}
                             />
 
                             {/* =============================================== */}
@@ -411,12 +544,20 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                                     <FileUploadRounded /> Choose Logo
                                     <input name='banner' type="file" accept="image/*" hidden onChange={(e) => handleImageChange(e, 'banner')} />
                                 </Button>
-                                {formData?.company?.images?.banner && <Avatar
-                                    src={formData?.company?.images?.banner}
-                                    alt="Uploaded Preview"
-                                    className='MuiAvatar-size8'
-                                // sx={{ width: 80, height: 80 }}
-                                />}
+                                {formData?.company?.images?.banner &&
+                                    <Avatar
+                                        src={formData?.company?.images?.banner}
+                                        // error={!!errors.company?.images?.banner}
+                                        // helperText={errors?.company?.images?.banner}
+                                        alt="Uploaded Preview"
+                                        className='MuiAvatar-size8'
+                                    // sx={{ width: 80, height: 80 }}
+                                    />}
+                                {errors.company?.images?.banner && (
+                                    <Typography variant="caption" color="error" mt={0.5}>
+                                        {errors?.company?.images?.banner}
+                                    </Typography>
+                                )}
                             </Stack>
 
                             {/* =============================================== */}
@@ -428,26 +569,27 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                                 </Button>
                                 {formData?.company?.images.office && <Avatar
                                     src={formData?.company?.images.office}
+                                    // error={!!errors.company?.images?.office}
+                                    // helperText={errors.company?.images?.office}
                                     alt="Uploaded Preview"
                                     className='MuiAvatar-size8'
-                                // sx={{ width: 80, height: 80 }}
                                 />}
                             </Stack>
                         </AccordionDetails>
                     </Accordion>
-
-
                     {/* =============================================== */}
                     <TextField
                         minRows={3}
                         label="Description"
-                        id="custom-input"
                         onChange={handleChange}
                         margin="normal"
                         multiline
+                        error={!!errors.description}
+                        helperText={errors.description}
                         name='description'
                         maxRows={8}
-                        value={formData?.description}
+                        // InputLabelProps={{ shrink: true }}
+                        value={formData?.description || ''}
                         // onChange={(e) => setRequirement(e.target.value)}
                         // hiddenLabel
                         fullWidth
@@ -459,11 +601,13 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                         margin="normal"
                         multiline
                         name='responsibilities'
-                        value={formData?.responsibilities}
+                        error={!!errors?.responsibilities}
+                        helperText={errors?.responsibilities}
+                        value={formData?.responsibilities || ''}
                         onChange={handleChange}
                         fullWidth
                         maxRows={8}
-                        InputLabelProps={{ shrink: true }}
+                    // InputLabelProps={{ shrink: true }}
                     />
 
                     {/* =============================================== */}
@@ -472,25 +616,27 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                         margin="normal"
                         multiline
                         name='requirements'
-                        value={formData?.requirements}
+                        error={!!errors?.requirements}
+                        helperText={errors?.requirements}
+                        value={formData?.requirements || ''}
                         onChange={handleChange}
                         fullWidth
                         maxRows={8}
-                        InputLabelProps={{ shrink: true }}
+                    // InputLabelProps={{ shrink: true }}
                     />
 
                     {/* =============================================== */}
-                    <FormControl fullWidth sx={{ mb: 4 }}>
-                        <InputLabel id="demo-multiple-checkbox-label">Tag</InputLabel>
+                    <FormControl fullWidth sx={{ mb: 4 }} error={!!errors?.tags}>
+                        <InputLabel id="demo-multiple-checkbox-labels">Tag</InputLabel>
                         <Select
                             label="Tags"
-                            id="demo-multiple-chip"
+                            // id="demo-multiple-chips"
                             multiple
                             name='tags'
                             fullWidth
-                            value={Array.from(formData?.tags)}
+                            value={Array.from(formData?.tags) || []}
                             onChange={handleChange}
-                            input={<OutlinedInput id="select-multiple-chip" label="Tags" />}
+                            input={<OutlinedInput id="select-multiple-chips" label="Tags" />}
                             renderValue={(selected) => (
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                     {selected.map((value, key) => (
@@ -514,16 +660,19 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                                 </MenuItem>
                             ))}
                         </Select>
+                        {errors?.tags && (
+                            <FormHelperText>{errors.tags}</FormHelperText>
+                        )}
                     </FormControl>
 
                     {/* =============================================== */}
-                    <FormControl fullWidth sx={{ mb: 4 }} >
+                    <FormControl fullWidth sx={{ mb: 4 }} error={!!errors?.employmentType}>
                         <InputLabel id="demo-multiple-checkbox-label">Employement Type</InputLabel>
                         <Select
                             label="Employement Type"
                             name='employmentType'
                             fullWidth
-                            value={formData?.employmentType}
+                            value={formData?.employmentType || ''}
                             onChange={handleChange}
                             // input={<OutlinedInput id="select-multiple-chip" label="Employement Type" />}
                             MenuProps={{
@@ -535,21 +684,27 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                                     },
                                 },
                             }}>
+                            <MenuItem value="">
+                                <em>Select Employment Type</em>
+                            </MenuItem>
                             <MenuItem value={'Full-Time'}>Full time</MenuItem>
                             <MenuItem value={'Part-Time'}>Part time</MenuItem>
                             <MenuItem value={'Contract'}>Contract</MenuItem>
                             <MenuItem value="Internship">Internship</MenuItem>
                         </Select>
+                        {errors?.employmentType && (
+                            <FormHelperText>{errors.employmentType}</FormHelperText>
+                        )}
                     </FormControl>
 
                     {/* =============================================== */}
-                    <FormControl fullWidth sx={{ mb: 3 }} >
-                        <InputLabel id="demo-multiple-checkbox-label">Location Type</InputLabel>
+                    <FormControl fullWidth sx={{ mb: 3 }} error={!!errors?.locationType}>
+                        <InputLabel id="demo-multiple-checkbox-labele">Location Type</InputLabel>
                         <Select
                             label="Location Type"
                             name='locationType'
                             fullWidth
-                            value={formData?.locationType}
+                            value={formData?.locationType || ''}
                             onChange={handleChange}
                             // input={<OutlinedInput id="select-multiple-chip" label="Employement Type" />}
                             MenuProps={{
@@ -561,10 +716,16 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                                     },
                                 },
                             }}>
+                            <MenuItem value="">
+                                <em>Select Employment Type</em>
+                            </MenuItem>
                             <MenuItem value={'Hybrid'}>Hybrid</MenuItem>
                             <MenuItem value={'Remote'}>Remote</MenuItem>
                             <MenuItem value={'On-Site'}>On Site</MenuItem>
                         </Select>
+                        {errors?.tags && (
+                            <FormHelperText>{errors.locationType}</FormHelperText>
+                        )}
                     </FormControl>
 
                     {/* =============================================== */}
@@ -572,42 +733,33 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                     <Stack direction={'row'} gap={2} alignItems={'baseline'}>
                         <TextField
                             label="Minimum"
-                            value={formData.salary.min}
-                            name='min'
+                            value={formData.salary?.min || ''}
+                            name='salary.min'
                             margin="normal"
+                            error={!!errors?.salary?.min}
+                            helperText={errors?.salary?.min}
                             fullWidth
                             onChange={handleChange}
-                        // InputLabelProps={{ shrink: true }}
-
-                        // sx={{
-                        //     '& .MuiOutlinedInput-root': {
-                        //         borderRadius: (theme)=>  `${theme.shape.borderRadius[0]}px`, // change this value as needed
-                        //     },
-                        // }}
-                        />  <TextField
-                            label="Maximum"
-                            value={formData.salary.max}
-                            name='max'
-                            margin="normal"
-                            fullWidth
-                            onChange={handleChange}
-                        // InputLabelProps={{ shrink: true }}
-
-                        // sx={{
-                        //     '& .MuiOutlinedInput-root': {
-                        //         borderRadius: 1, // change this value as needed
-                        //     },
-                        // }}
                         />
-                        <FormControl fullWidth sx={{ mb: 3 }} >
+                        <TextField
+                            label="Maximum"
+                            value={formData.salary?.max || ''}
+                            name='salary.max'
+                            error={!!errors?.salary?.max}
+                            helperText={errors?.salary?.max}
+                            margin="normal"
+                            fullWidth
+                            onChange={handleChange}
+
+                        />
+                        <FormControl fullWidth sx={{ mb: 3 }} error={!!errors?.salary?.currency} >
                             <InputLabel >currency</InputLabel>
                             <Select
                                 label="currency"
-                                name='currency'
+                                name='salary.currency'
                                 fullWidth
-                                value={formData.salary.currency}
+                                value={formData?.salary?.currency || ''}
                                 onChange={handleChange}
-                                // input={<OutlinedInput id="select-multiple-chip" label="Employement Type" />}
                                 MenuProps={{
                                     PaperProps: {
                                         style: {
@@ -617,20 +769,26 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                                         },
                                     },
                                 }}>
+                                <MenuItem value="">
+                                    <em>Select Employment Type</em>
+                                </MenuItem>
                                 <MenuItem value={'USD'} key={'USD'}>USD</MenuItem>
                                 <MenuItem value={'INR'} key={'INR'}>INR</MenuItem>
                                 <MenuItem value={'EUR'} key={'EUR'}>EUR</MenuItem>
                                 <MenuItem value={'GBP'} key={'GBP'}>GBP</MenuItem>
                                 <MenuItem value={'JPY'} key={'JPY'}>JPY</MenuItem>
                             </Select>
+                            {errors?.tags && (
+                                <FormHelperText>{errors.salary?.currency}</FormHelperText>)
+                            }
                         </FormControl>
-                        <FormControl fullWidth sx={{ mb: 3 }} >
+                        <FormControl fullWidth sx={{ mb: 3 }} error={!!errors?.salary?.type}>
                             <InputLabel >Type</InputLabel>
                             <Select
                                 label="Type"
-                                name='type'
+                                name='salary.type'
                                 fullWidth
-                                value={formData.salary.type}
+                                value={formData?.salary?.type || ''}
                                 onChange={handleChange}
                                 // input={<OutlinedInput id="select-multiple-chip" label="Employement Type" />}
                                 MenuProps={{
@@ -642,35 +800,31 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch }) {
                                         },
                                     },
                                 }}>
+                                <MenuItem value="">
+                                    <em>Select Salary Type</em>
+                                </MenuItem>
                                 <MenuItem value={'Annual'}>Annual</MenuItem>
                                 <MenuItem value={'Monthly'}>Monthly</MenuItem>
                                 <MenuItem value={'quaterly'}>quaterly</MenuItem>
                             </Select>
+                            {errors?.tags && (
+                                <FormHelperText>{errors.salary?.type}</FormHelperText>)
+                            }
                         </FormControl>
                     </Stack>
                 </Box>
                 <Stack direction={'row'} gap={2}>
-                    <Button variant="contained" onClick={handleUpdate}>Update</Button>
+                    <Button variant="contained" onClick={() => handleUpdate(mode)}>{mode == 'edit' ? 'Update' : 'Add'}</Button>
                     <Button variant="outlined" onClick={opnEditFun} >Close</Button>
                 </Stack>
             </Box>
-            <Snackbar
-                open={toast.open}
-                autoHideDuration={3000}
-                onClose={() => setToast({ ...toast, open: false })}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-            >
-                <MuiAlert
-                    elevation={1}
-                    variant="filled"
-                    severity={toast.severity}
-                    onClose={() => setToast({ ...toast, open: false })}
-                    sx={{ width: '100%', }}
-                >
-                    {toast.message}
-                </MuiAlert>
-            </Snackbar>
-        </SideModal>
+
+        </SideModal >
+        {
+            toast.open && <Toast autoHideDuration={3000} open={toast.open} severity={toast.severity} onClose={() => setToast({ ...toast, open: false })} tMessage={toast.message} />
+
+        }
+    </>
     )
 }
 
