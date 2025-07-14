@@ -13,7 +13,7 @@ import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import Toast from './Toast';
 
 function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
-
+    const EditMode = mode === 'edit';
     // const { refetch } = useGetUsersQuery();
     let ListTags = [{
         "jobType": "Administrator"
@@ -57,7 +57,6 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
     const [postUserByID, { isLoadingg, isError, isSuccess }] = usePostUserByIDMutation();
     const [postUser, { data: newJobData, error: NewJobError }] = usePostUserMutation();
 
-
     const [toast, setToast] = useState({
         open: false,
         severity: 'info',
@@ -100,43 +99,48 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
     const [selectedValue, setSelectedValue] = useState(null);
     const [errors, setErrors] = React.useState({});
 
-    const EditMode = mode === 'edit';
 
 
-
+    const [imagePreviews, setImagePreviews] = useState({
+        logo: '',
+        banner: '',
+        office: '',
+    });
     const handleImageChange = (event, Imgtype) => {
         debugger
         const file = event.target.files?.[0];
-        if (file) {
-            const imageUrl = URL.createObjectURL(file);
-            setFormData((prev) => {
-                if (Imgtype === 'logo') {
-                    return {
-                        ...prev,
-                        company: {
-                            ...prev.company,
-                            logo: imageUrl
-                        }
-                    };
-                }
+        if (!file) return;
+
+        const imageUrl = URL.createObjectURL(file);
+        setImagePreviews(prev => ({
+            ...prev,
+            [Imgtype]: imageUrl
+        }));
+
+        setFormData((prev) => {
+            if (Imgtype === 'logo') {
                 return {
                     ...prev,
                     company: {
                         ...prev.company,
-                        images: {
-                            ...prev.company.images,
-                            [Imgtype]: imageUrl
-                        }
+                        logo: file
+                    }
+                };
+            }
+            return {
+                ...prev,
+                company: {
+                    ...prev.company,
+                    images: {
+                        ...prev.company.images,
+                        [Imgtype]: file
                     }
                 }
-
-            })
-        }
-
+            }
+        })
     };
     const handleChange = (e) => {
         const { name, value } = e.target;
-
         // Helper: Update nested state
         const updateNestedField = (parentKey, childKey) => {
             setFormData(prev => ({
@@ -154,6 +158,7 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
             updateNestedField('salary', key);
         }
         // Handle company fields (e.g., "company.name", "company.website")
+        // Handle company fields (non-file)
         else if (name.startsWith('company.')) {
             const key = name.split('.')[1];
             updateNestedField('company', key);
@@ -210,18 +215,18 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
             { path: 'description', label: 'Description' },
             { path: 'company.name', label: 'Company name' },
             { path: 'company.logo', label: 'Company Logo' },
-            { path: 'company.location', label: 'Company location' },
+            // { path: 'company.location', label: 'Company location' },
             { path: 'company.images.banner', label: 'Company Banner image' },
-            { path: 'company.website', label: 'Company website' },
-            { path: 'salary.min', label: 'Minimum salary' },
-            { path: 'salary.max', label: 'Maximum salary' },
-            { path: 'salary.currency', label: 'Currency' },
-            { path: 'salary.type', label: 'Type' },
-            { path: 'locationType', label: 'Location Type' },
-            { path: 'tags', label: 'Tags' },
-            { path: 'requirements', label: 'Requirement' },
-            { path: 'responsibilities', label: 'Responsibilities' },
-            { path: 'employmentType', label: 'Employment type' },
+            // { path: 'company.website', label: 'Company website' },
+            // { path: 'salary.min', label: 'Minimum salary' },
+            // { path: 'salary.max', label: 'Maximum salary' },
+            // { path: 'salary.currency', label: 'Currency' },
+            // { path: 'salary.type', label: 'Type' },
+            // { path: 'locationType', label: 'Location Type' },
+            // { path: 'tags', label: 'Tags' },
+            // { path: 'requirements', label: 'Requirement' },
+            // { path: 'responsibilities', label: 'Responsibilities' },
+            // { path: 'employmentType', label: 'Employment type' },
             // { path: 'experienceLevel', label: 'Experience level' },
         ];
 
@@ -275,6 +280,7 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
             formData123.append('company.website', formData.company.website);
 
             // ✅ Files
+            console.log(formData.company.logo)
             formData123.append('company.logo', formData.company.logo);
             formData123.append('company.images.banner', formData.company.images.banner);
             formData123.append('company.images.office', formData.company.images.office);
@@ -297,11 +303,11 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
             // formData.append('howToApply', formData.howToApply);
             // formData.append('status', formData.status);
 
-
             if (!validate()) return;
 
             if (EditMode) {
-                await postUserByID({ id, data: formData }).unwrap();
+                console.log('Edit data', formData);
+                await postUserByID({ id, data: formData123  }).unwrap();
                 setToast({
                     open: true,
                     severity: 'success',
@@ -310,8 +316,8 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
                 opnEditFun(false);  // close drawer after toast is set
                 onRefetch();
             } else {
-                await postUser({ data: formData }).unwrap(); // <-- use formData here, not newJobData
-                console.log(formData)
+                await postUser({ data: formData123 }).unwrap(); // <-- use formData here, not newJobData
+
                 opnEditFun(false);  // close drawer after toast is set
                 setToast({
                     open: true,
@@ -344,8 +350,36 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
             // Keep drawer open on error (do NOT call opnEditFun(true))
         }
     };
+    useEffect(() => {
+        const generatePreview = (fileOrUrl) => {
+            if (!fileOrUrl) return '';
+            // If it's already a string (server URL), return it
+            if (typeof fileOrUrl === 'string') return fileOrUrl;
+            // If it's a File, convert to blob URL
+            return URL.createObjectURL(fileOrUrl);
+        };
+    
+        const previews = {
+            logo: generatePreview(formData.company.logo),
+            banner: generatePreview(formData.company.images?.banner),
+            office: generatePreview(formData.company.images?.office),
+        };
+    
+        setImagePreviews(previews);
+    
+        // Cleanup blob URLs when component unmounts or previews change
+        return () => {
+            Object.values(previews).forEach((url) => {
+                if (url.startsWith('blob:')) {
+                    URL.revokeObjectURL(url);
+                }
+            });
+        };
+    }, [formData]);
+    
 
     useEffect(() => {
+        console.log(userData)
         setFormData({
             title: EditMode ? userData?.title || '' : '',
             company: {
@@ -457,13 +491,14 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
                                     <FileUploadRounded /> Choose Logo
                                     <input type="file" name='company.logo' accept="image/*" hidden onChange={(e) => handleImageChange(e, 'logo')} />
                                 </Button>
-                                {formData?.company?.logo && <Avatar
+                                {/* {formData?.company?.logo && <Avatar
                                     src={formData?.company?.logo}
 
                                     className='MuiAvatar-size8'
                                     alt="Uploaded Preview"
-                                />}
+                                />} */}
 
+                                {imagePreviews.logo && <img src={imagePreviews.logo} alt="Logo Preview" width="100" />}
                                 {errors?.company?.logo && (
                                     <Typography variant="caption" color="error" mt={0.5}>
                                         {errors.company.logo}
@@ -542,17 +577,21 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
                                 <Typography mb={'6px'} variant='smallerText'>Banner</Typography>
                                 <Button variant="outlined" sx={{ marginBottom: 1 }} component="label">
                                     <FileUploadRounded /> Choose Logo
-                                    <input name='banner' type="file" accept="image/*" hidden onChange={(e) => handleImageChange(e, 'banner')} />
+                                    <input name='company.images.banner' type="file" accept="image/*" hidden onChange={(e) => handleImageChange(e, 'banner')} />
                                 </Button>
-                                {formData?.company?.images?.banner &&
-                                    <Avatar
-                                        src={formData?.company?.images?.banner}
-                                        // error={!!errors.company?.images?.banner}
-                                        // helperText={errors?.company?.images?.banner}
-                                        alt="Uploaded Preview"
-                                        className='MuiAvatar-size8'
-                                    // sx={{ width: 80, height: 80 }}
-                                    />}
+                                {imagePreviews.banner && <img src={imagePreviews.banner} alt="Logo Preview" width="100" />}
+                                {/* {formData?.company?.images?.banner &&
+
+                                    // <Avatar
+                                    //     src={formData?.company?.images?.banner}
+                                    //     // error={!!errors.company?.images?.banner}
+                                    //     // helperText={errors?.company?.images?.banner}
+                                    //     alt="Uploaded Preview"
+                                    //     className='MuiAvatar-size8'
+                                    // // sx={{ width: 80, height: 80 }}
+                                    // />
+                                    } */}
+
                                 {errors.company?.images?.banner && (
                                     <Typography variant="caption" color="error" mt={0.5}>
                                         {errors?.company?.images?.banner}
@@ -565,15 +604,9 @@ function EditJob({ opneEditt, opnEditFun, id, onRefetch, mode }) {
                                 <Typography mb={'6px'} variant='smallerText'>Office</Typography>
                                 <Button variant="outlined" sx={{ marginBottom: 1 }} component="label">
                                     <FileUploadRounded /> Choose Logo
-                                    <input type="file" name='office' accept="image/*" hidden onChange={(e) => handleImageChange(e, 'office')} />
+                                    <input type="file" name='company.images.office' accept="image/*" hidden onChange={(e) => handleImageChange(e, 'office')} />
                                 </Button>
-                                {formData?.company?.images.office && <Avatar
-                                    src={formData?.company?.images.office}
-                                    // error={!!errors.company?.images?.office}
-                                    // helperText={errors.company?.images?.office}
-                                    alt="Uploaded Preview"
-                                    className='MuiAvatar-size8'
-                                />}
+                                {imagePreviews.office && <img src={imagePreviews.office} alt="Logo Preview" width="100" />}
                             </Stack>
                         </AccordionDetails>
                     </Accordion>
