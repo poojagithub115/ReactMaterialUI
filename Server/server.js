@@ -5,6 +5,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { json } = require('stream/consumers');
 
 const app = express();
 const PORT = 5000;
@@ -242,13 +243,17 @@ const jobDetails = [
 
 ];
 
-
+//////////////////////////////////////////
 //Get all job
+//////////////////////////////////////////
 app.get('/api/users', (req, res) => {
   res.json(jobDetails);
 });
 
+
+//////////////////////////////////////////
 // get Selected job
+//////////////////////////////////////////
 app.get('/api/users/:id', (req, res) => {
   const item = jobDetails.find(i => i.id === parseInt(req.params.id))
   if (!item) return res.status(404).send('Item not found');
@@ -257,23 +262,32 @@ app.get('/api/users/:id', (req, res) => {
 
 
 
-
+//////////////////////////////////////////
 // Set storage config
+//////////////////////////////////////////
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, path.join(__dirname, 'uploads')); // Keep all images in the same folder
   },
   filename: (req, file, cb) => {
+
+    const title = req.body.title || 'untitled'; // fallback title
+    const cname = req.body['company.name'] || 'untitled';
+    const safeTitle = title.trim().replace(/[^a-zA-Z0-9_-]/g, '_'); // sanitize
+    const safecname = cname.trim().replace(/[^a-zA-Z0-9_-]/g, '_'); // sanitize
+
+    const fieldName = file.fieldname.replace(/^company(\.images)?\./, ''); // Extract logo, banner, or office
+
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const ext = path.extname(file.originalname);
+
+    const filename = `${safeTitle}-${fieldName}-${safecname}-${uniqueSuffix}${ext}`;
+    cb(null, filename);
   }
 });
 
+
 const upload = multer({ storage });
-
-// const jobDetails = [];
-
-
 const cpUpload = upload.fields([
   { name: 'company.logo', maxCount: 1 },
   { name: 'company.images.banner', maxCount: 1 },
@@ -283,53 +297,31 @@ const cpUpload = upload.fields([
 //Add new joB
 app.post('/api/users', cpUpload, async (req, res) => {
   try {
-    const files = req.files || {};
-    // const body = req.body;
-    // const { title, description, ...data } = req.body;
-    // const {
-    //   title,
-    //   company,
-    //   description,
-    //   requirements,
-    //   responsibilities,
-    //   employmentType,
-    //   experienceLevel,
-    //   salary,
-    //   locationType,
-    //   tags,
-    //   applicationDeadline,
-    //   howToApply,
-    //   status,
-    // } = req.body;
-
-
+    const files = req.files;
     const body = req.body; // keep as is
-
     const title = body.title;
+
+    const logoFile = files['company.logo']?.[0];
+    const bannerFile = files['company.images.banner']?.[0];
+    const officeFile = files['company.images.office']?.[0];
     const company = {
       name: body['company.name'],
       location: body['company.location'],
       website: body['company.website'],
-      logo: files['company.logo']?.[0],
+      logo: logoFile,
       images: {
-        banner: files['company.images.banner']?.[0],
-        office: files['company.images.office']?.[0]
+        banner: bannerFile,
+        office: officeFile
       }
     };
-
-    // const logoFile = files['company.logo']?.[0];
-    // const bannerFile = files['company.images.banner']?.[0];
-    // const officeFile = files['company.images.office']?.[0];
-
-
     const description = body.description;
     const requirements = body.requirements;
     const responsibilities = body.responsibilities;
     const employmentType = body.employmentType;
     const experienceLevel = body.experienceLevel;
     const locationType = body.locationType;
-    const tags = body.tags// handle JSON array
-    const salary = body.salary // parse salary object
+    const tags = JSON.parse(body.tags)// handle JSON array
+    const salary = JSON.parse(body.salary) // parse salary object
     const applicationDeadline = body.applicationDeadline;
     const howToApply = body.howToApply;
     const status = body.status;
@@ -344,40 +336,22 @@ app.post('/api/users', cpUpload, async (req, res) => {
     if (!locationType) errors.push('Location type is required.');
 
     // // Company validations
-    // if (!company || typeof company !== 'object') {
-    //   errors.push('Company details are required.');
-    // } else {
+
     if (!company.name || company.name.trim() === '') errors.push('Company name is required.');
     if (!company.location || company.location.trim() === '') errors.push('Company location is required.');
     if (!company.website || company.website.trim() === '') errors.push('Company website is required.');
-    // if (!company.logo || company.logo.trim() === '') errors.push('Company logo is required.');
-
-    // if (!company.images || typeof company.images !== 'object') {
-    //   errors.push('Company images are required.');
-    // } else {
-    // if (!company.images.banner || company.images.banner.trim() === '') errors.push('Company banner image is required.');
-    //   }
-    // }
 
 
+    // console.log('Logo:', body)
     if (!company.logo) errors.push('Company logo is required.');
     if (!company.images.banner) errors.push('Company banner image is required.');
 
 
-    // Salary validations
-    if (!salary || typeof salary !== 'object') {
-      errors.push('Salary details are required.');
-    } else {
-      if (!salary.min || isNaN(salary.min)) errors.push('Minimum salary must be a number.');
-      if (!salary.max || isNaN(salary.max)) errors.push('Maximum salary must be a number.');
-      if (!salary.currency || salary.currency.trim() === '') errors.push('Salary currency is required.');
-      if (!salary.type || salary.type.trim() === '') errors.push('Salary type is required.');
-    }
+    // if (!salary.min || isNaN(salary.min)) errors.push('Minimum salary must be a number.');
+    // if (!salary.max || isNaN(salary.max)) errors.push('Maximum salary must be a number.');
+    // if (!salary.currency || salary.currency.trim() === '') errors.push('Salary currency is required.');
+    // if (!salary.type || salary.type.trim() === '') errors.push('Salary type is required.');
 
-    // Optional array validations
-    // if (!Array.isArray(requirements) || requirements.length === 0) {
-    //   errors.push('At least one requirement is required.');
-    // }
 
     if ((!responsibilities) || responsibilities.split(',').length === 0) {
       errors.push('At least one responsibility is required.');
@@ -386,7 +360,6 @@ app.post('/api/users', cpUpload, async (req, res) => {
     if ((!requirements) || requirements.split(',').length === 0) {
       errors.push('At least one responsibility is required.');
     }
-
     if (!Array.isArray(tags) || tags.length === 0) {
       errors.push('At least one tag is required.');
     }
@@ -397,9 +370,6 @@ app.post('/api/users', cpUpload, async (req, res) => {
     }
 
 
-    // if (!title || !description) {
-    //   return res.status(400).json({ error: 'Title and description are required.' });
-    // }
     const newJob = {
 
       id: jobDetails.length ? Math.max(...jobDetails.map(job => job.id)) + 1 : 101,
@@ -407,10 +377,10 @@ app.post('/api/users', cpUpload, async (req, res) => {
       title: body.title,
       company: {
         ...company,
-        logo: logoFile ? `/images/${logoFile.filename}` : '',
+        logo: logoFile ? `/uploads/${logoFile.filename}` : '',
         images: {
-          banner: bannerFile ? `/images/${bannerFile.filename}` : '',
-          office: officeFile ? `/images/${officeFile.filename}` : ''
+          banner: files['company.images.banner']?.[0] ? `/uploads/${bannerFile.filename}` : '',
+          office: files['company.images.office']?.[0] ? `/uploads/${officeFile.filename}` : ''
         }
       },
       description,
@@ -426,7 +396,7 @@ app.post('/api/users', cpUpload, async (req, res) => {
       howToApply,
       status,
     };
-    console.log('New ', newJob)
+
     jobDetails.push(newJob)
 
     // const docRef = await jobsCollection.add(newJob);
@@ -443,28 +413,130 @@ app.post('/api/users', cpUpload, async (req, res) => {
 })
 
 
-app.use('/images', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
+/////////////////////////////////
+// //Update job
+//////////////////////////////////////////
+
+// app.post('/api/users/:id', cpUpload, (req, res) => {
+//   const jobId = parseInt(req.params.id);
+//   // console.log(`Updating job with ID: ${jobId}`);
+//   // console.log('Request body:', req.body);
+
+//   const index = jobDetails.findIndex(job => job.id === jobId);
+
+//   if (index === -1) {
+//     // console.log(`Job with ID ${jobId} not found.`);
+//     return res.status(404).json({ message: 'Job not found' });
+//   }
+
+//   const updatedJob = { ...jobDetails[index], ...req.body, id: jobId };
+//   jobDetails[index] = updatedJob;
+
+//   // console.log(`Updated job:`, updatedJob);
+
+//   res.json({
+//     message: 'Job updated successfully',
+//     job: updatedJob
+//   });
+// });
 
 
 
-//Update job
-app.post('/api/users/:id', (req, res) => {
+app.post('/api/users/:id', cpUpload, async (req, res) => {
   const jobId = parseInt(req.params.id);
-  // console.log(`Updating job with ID: ${jobId}`);
-  // console.log('Request body:', req.body);
-
   const index = jobDetails.findIndex(job => job.id === jobId);
 
   if (index === -1) {
-    // console.log(`Job with ID ${jobId} not found.`);
     return res.status(404).json({ message: 'Job not found' });
   }
 
-  const updatedJob = { ...jobDetails[index], ...req.body, id: jobId };
+  const title = req.body.title || jobDetails[index].title || 'untitled';
+  const companyName = req.body['company.name'] || jobDetails[index]?.company?.name || 'untitled';
+  const safeTitle = title.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const safeCName = companyName.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+
+  const renameUploadedFile = (file, fieldName, oldFilePath) => {
+    if (!file) return oldFilePath; // If no new file, keep old
+
+    const ext = path.extname(file.originalname);
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const newFileName = `${safeTitle}-${fieldName}-${safeCName}-${unique}${ext}`;
+    const newFilePath = path.join(file.destination, newFileName);
+
+    // Rename uploaded temp file
+    fs.renameSync(file.path, newFilePath);
+
+    // Delete old file if it exists and is in the uploads folder
+    if (oldFilePath && oldFilePath.startsWith('/uploads/')) {
+      const oldPath = path.join(__dirname, oldFilePath);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    // Return updated file info
+    return `/uploads/${newFileName}`;
+  };
+
+  const files = req.files;
+  const logoPath = renameUploadedFile(
+    files['company.logo']?.[0],
+    'logo',
+    jobDetails[index].company.logo
+  );
+
+  const bannerPath = renameUploadedFile(
+    files['company.images.banner']?.[0],
+    'banner',
+    jobDetails[index].company.images.banner
+  );
+
+  const officePath = renameUploadedFile(
+    files['company.images.office']?.[0],
+    'office',
+    jobDetails[index].company.images.office
+  );
+
+  // Parse JSON string fields
+  const tags = JSON.parse(req.body.tags || '[]');
+  const salary = JSON.parse(req.body.salary || '{}');
+
+
+  // Build updated job object
+  const updatedJob = {
+    ...jobDetails[index],
+    id: jobId,
+    title: req.body.title,
+    description: req.body.description,
+    requirements: req.body.requirements?.split(',').map(r => r.trim()) || [],
+    responsibilities: req.body.responsibilities?.split(',').map(r => r.trim()) || [],
+    employmentType: req.body.employmentType,
+    experienceLevel: req.body.experienceLevel,
+    salary: {
+      min: salary.min || '',
+      max: salary.max || '',
+      currency: salary.currency || '',
+      type: salary.type || ''
+    },
+    locationType: req.body.locationType,
+    postedDate: jobDetails[index].postedDate, // keep original post date
+    company: {
+      name: req.body['company.name'],
+      location: req.body['company.location'],
+      website: req.body['company.website'],
+      logo: logoPath,
+      images: {
+        banner: bannerPath,
+        office: officePath
+      }
+    }
+  };
+
   jobDetails[index] = updatedJob;
-
-  // console.log(`Updated job:`, updatedJob);
-
+  console.log(JSON.stringify(updatedJob, null, 2));
   res.json({
     message: 'Job updated successfully',
     job: updatedJob
@@ -472,7 +544,12 @@ app.post('/api/users/:id', (req, res) => {
 });
 
 
-// Delete job
+
+
+//////////////////////////////////////////
+// ---------------------- Delete job
+//////////////////////////////////////////
+
 app.delete('/api/users/:id', (req, res) => {
   const jobId = parseInt(req.params.id);
   const index = jobDetails.findIndex(job => job.id === jobId);
